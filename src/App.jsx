@@ -38,12 +38,31 @@ export default function SubmissionDashboard() {
   const [entryBarrageUsername, setEntryBarrageUsername] = useState(""); // 投稿弹幕昵称
   const [entryBarrageContent, setEntryBarrageContent] = useState(""); // 投稿弹幕内容
   const [entryBarrages, setEntryBarrages] = useState({}); // { entryId: [barrages] }
+  const [reactions, setReactions] = useState({}); // { entryId: { reaction: count } }
+  const [checkinToday, setCheckinToday] = useState(false); // 今天是否签到
+  const [userPoints, setUserPoints] = useState(0); // 用户积分
+  const [userBadges, setUserBadges] = useState([]); // 用户勋章
+  const [showLeaderboard, setShowLeaderboard] = useState(false); // 是否显示排行榜
+  const [showAchievements, setShowAchievements] = useState(false); // 是否显示成就
 
-  // 弹幕颜色列表
-  const BARRAGE_COLORS = ["#ff6b6b", "#4ecdc4", "#45b7d1", "#f9ca24", "#6c5ce7", "#a29bfe", "#fd79a8", "#fdcb6e", "#e17055", "#74b9ff"];
+  // 表情反应类型
+  const REACTIONS = [
+    { emoji: "👍", label: "赞" },
+    { emoji: "❤️", label: "爱" },
+    { emoji: "😂", label: "笑"  },
+    { emoji: "🔥", label: "火" },
+  ];
 
-  // 生成随机颜色
-  const getRandomColor = () => BARRAGE_COLORS[Math.floor(Math.random() * BARRAGE_COLORS.length)];
+  // 勋章定义
+  const BADGES = [
+    { id: "first_submission", icon: "🚀", name: "首次投稿", desc: "参与投稿" },
+    { id: "commentator", icon: "💬", name: "评论王", desc: "发表10条评论" },
+    { id: "popular", icon: "⭐", name: "爆款投稿", desc: "获赞20+" },
+    { id: "checkin_3", icon: "🔥", name: "连续签到3天", desc: "坚持打卡" },
+    { id: "checkin_7", icon: "⚡", name: "连续签到7天", desc: "签到达人" },
+    { id: "reacter", icon: "👍", name: "点赞小能手", desc: "点赞30次" },
+    { id: "social_butterfly", icon: "🦋", name: "社交达人", desc: "多种互动" },
+  ];
 
   // Load from storage
   useEffect(() => {
@@ -62,6 +81,19 @@ export default function SubmissionDashboard() {
         const entryBarragesData = localStorage.getItem("entry-barrages");
         if (entryBarragesData) {
           setEntryBarrages(JSON.parse(entryBarragesData));
+        }
+        // 加载表情反应
+        const reactionsData = localStorage.getItem("entry-reactions");
+        if (reactionsData) {
+          setReactions(JSON.parse(reactionsData));
+        }
+        // 加载用户数据
+        const userData = localStorage.getItem("user-data");
+        if (userData) {
+          const data = JSON.parse(userData);
+          setUserPoints(data.points || 0);
+          setUserBadges(data.badges || []);
+          setCheckinToday(data.lastCheckinDate === new Date().toDateString());
         }
       } catch (e) {
         console.log("No existing data");
@@ -126,7 +158,94 @@ export default function SubmissionDashboard() {
     alert("🎉 弹幕已发送！");
   };
 
-  // 发送投稿弹幕
+  // 添加表情反应
+  const addReaction = (entryId, reactionEmoji) => {
+    const newReactions = { ...reactions };
+    if (!newReactions[entryId]) {
+      newReactions[entryId] = {};
+    }
+    newReactions[entryId][reactionEmoji] = (newReactions[entryId][reactionEmoji] || 0) + 1;
+    setReactions(newReactions);
+
+    try {
+      localStorage.setItem("entry-reactions", JSON.stringify(newReactions));
+    } catch (e) {
+      console.error("Failed to save reaction:", e);
+    }
+
+    // 增加积分
+    const newPoints = userPoints + 1;
+    setUserPoints(newPoints);
+    updateUserData({ points: newPoints });
+  };
+
+  // 签到
+  const handleCheckin = () => {
+    if (checkinToday) {
+      alert("今天已经签到过了！");
+      return;
+    }
+
+    const newPoints = userPoints + 10;
+    setUserPoints(newPoints);
+    setCheckinToday(true);
+
+    // 检查连续签到勋章
+    checkBadges(newPoints, entryBarrages);
+
+    updateUserData({
+      points: newPoints,
+      badges: userBadges,
+      lastCheckinDate: new Date().toDateString(),
+    });
+
+    alert("🎉 签到成功！+10 积分");
+  };
+
+  // 更新用户数据保存
+  const updateUserData = (data) => {
+    try {
+      const userData = {
+        points: data.points || userPoints,
+        badges: data.badges || userBadges,
+        lastCheckinDate: data.lastCheckinDate || new Date().toDateString(),
+      };
+      localStorage.setItem("user-data", JSON.stringify(userData));
+    } catch (e) {
+      console.error("Failed to save user data:", e);
+    }
+  };
+
+  // 检查并解锁勋章
+  const checkBadges = (points, barragesData) => {
+    const newBadges = [...userBadges];
+    const entries = entries;
+
+    // 检查首次投稿
+    if (entries.length > 0 && !userBadges.includes("first_submission")) {
+      newBadges.push("first_submission");
+      alert("🚀 解锁勋章：首次投稿");
+    }
+
+    // 检查评论数量
+    const totalComments = Object.values(barragesData).reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
+    if (totalComments >= 10 && !userBadges.includes("commentator")) {
+      newBadges.push("commentator");
+      alert("💬 解锁勋章：评论王");
+    }
+
+    // 检查点赞数量
+    const totalReactions = Object.values(reactions).reduce((sum, obj) => {
+      return sum + Object.values(obj).reduce((s, c) => s + c, 0);
+    }, 0);
+    if (totalReactions >= 30 && !userBadges.includes("reacter")) {
+      newBadges.push("reacter");
+      alert("👍 解锁勋章：点赞小能手");
+    }
+
+    setUserBadges(newBadges);
+    return newBadges;
+  };
   const sendEntryBarrage = (entryId) => {
     if (!entryBarrageUsername.trim() || !entryBarrageContent.trim()) {
       alert("请填写昵称和评论内容");
@@ -226,6 +345,25 @@ export default function SubmissionDashboard() {
           >
             {showForm ? "✕ 关闭" : "+ 新投稿"}
           </button>
+          <button
+            onClick={handleCheckin}
+            style={{ ...styles.button, ...styles.checkinButton }}
+            disabled={checkinToday}
+          >
+            {checkinToday ? "✓ 已签到" : "📅 签到"} (+10分)
+          </button>
+          <button
+            onClick={() => setShowLeaderboard(!showLeaderboard)}
+            style={{ ...styles.button, ...styles.leaderboardButton }}
+          >
+            🏆 排行榜
+          </button>
+          <button
+            onClick={() => setShowAchievements(!showAchievements)}
+            style={{ ...styles.button, ...styles.achievementButton }}
+          >
+            🏅 成就 ({userBadges.length})
+          </button>
           {!isAdmin ? (
             <button
               onClick={() => setShowAdminLogin(!showAdminLogin)}
@@ -238,9 +376,16 @@ export default function SubmissionDashboard() {
               onClick={handleAdminLogout}
               style={{ ...styles.button, ...styles.logoutButton }}
             >
-              👤 退出登录
+              👤 退出
             </button>
           )}
+        </div>
+
+        {/* 用户积分面板 */}
+        <div style={styles.userPanel}>
+          <div style={styles.pointsCard}>
+            💎 我的积分: <strong>{userPoints}</strong>
+          </div>
         </div>
       </div>
 
@@ -273,6 +418,71 @@ export default function SubmissionDashboard() {
               取消
             </button>
           </div>
+        </div>
+      )}
+
+      {/* 排行榜面板 */}
+      {showLeaderboard && (
+        <div style={styles.leaderboardPanel}>
+          <h3 style={styles.panelTitle}>🏆 排行榜</h3>
+          <h4 style={styles.tabTitle}>⭐ 最受欢迎投稿</h4>
+          {filteredEntries.length === 0 ? (
+            <p style={styles.noData}>还没有投稿</p>
+          ) : (
+            entries
+              .sort((a, b) => {
+                const aReactions = Object.values(reactions[a.id] || {}).reduce((s, c) => s + c, 0);
+                const bReactions = Object.values(reactions[b.id] || {}).reduce((s, c) => s + c, 0);
+                return bReactions - aReactions;
+              })
+              .slice(0, 5)
+              .map((entry, idx) => {
+                const total = Object.values(reactions[entry.id] || {}).reduce((s, c) => s + c, 0);
+                return (
+                  <div key={entry.id} style={styles.leaderboardItem}>
+                    <span style={styles.rank}>{idx + 1}.</span>
+                    <span>{entry.name}</span>
+                    <span style={styles.badge}>👍 {total}</span>
+                  </div>
+                );
+              })
+          )}
+          <button
+            onClick={() => setShowLeaderboard(false)}
+            style={{ ...styles.button, ...styles.cancelButton, marginTop: "15px" }}
+          >
+            关闭
+          </button>
+        </div>
+      )}
+
+      {/* 成就面板 */}
+      {showAchievements && (
+        <div style={styles.achievementPanel}>
+          <h3 style={styles.panelTitle}>🏅 我的成就</h3>
+          <div style={styles.badgeGrid}>
+            {BADGES.map((badge) => (
+              <div
+                key={badge.id}
+                style={{
+                  ...styles.badgeCard,
+                  ...(userBadges.includes(badge.id)
+                    ? styles.badgeCardUnlocked
+                    : styles.badgeCardLocked),
+                }}
+              >
+                <div style={styles.badgeIcon}>{badge.icon}</div>
+                <div style={styles.badgeName}>{badge.name}</div>
+                <div style={styles.badgeDesc}>{badge.desc}</div>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => setShowAchievements(false)}
+            style={{ ...styles.button, ...styles.cancelButton, marginTop: "15px" }}
+          >
+            关闭
+          </button>
         </div>
       )}
 
@@ -525,6 +735,21 @@ export default function SubmissionDashboard() {
                       {expandedId === entry.id ? "▼" : "▶"}
                     </button>
                   </div>
+                </div>
+
+                {/* 快速反应行 */}
+                <div style={styles.quickReactionsBar}>
+                  {REACTIONS.map((reaction) => (
+                    <button
+                      key={reaction.emoji}
+                      onClick={() => addReaction(entry.id, reaction.emoji)}
+                      style={styles.reactionButton}
+                      title={reaction.label}
+                    >
+                      {reaction.emoji}{" "}
+                      {reactions[entry.id]?.[reaction.emoji] || 0}
+                    </button>
+                  ))}
                 </div>
 
                 {expandedId === entry.id && (
@@ -1189,5 +1414,140 @@ const styles = {
     fontFamily: "inherit",
     transition: "all 0.3s",
     boxSizing: "border-box",
+  },
+  checkinButton: {
+    background: "linear-gradient(135deg, #ec4899 0%, #db2777 100%)",
+    color: "white",
+  },
+  leaderboardButton: {
+    background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+    color: "white",
+  },
+  achievementButton: {
+    background: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
+    color: "white",
+  },
+  userPanel: {
+    display: "flex",
+    gap: "12px",
+    justifyContent: "center",
+    margin: "15px 0",
+    flexWrap: "wrap",
+  },
+  pointsCard: {
+    backgroundColor: "#fff7ed",
+    border: "3px solid #fb923c",
+    borderRadius: "10px",
+    padding: "10px 20px",
+    fontSize: "1rem",
+    fontWeight: "700",
+    color: "#c2410c",
+  },
+  quickReactionsBar: {
+    display: "flex",
+    gap: "8px",
+    padding: "12px 0",
+    borderTop: "1px solid #f0f0f0",
+    borderBottom: "1px solid #f0f0f0",
+    flexWrap: "wrap",
+  },
+  reactionButton: {
+    padding: "8px 12px",
+    border: "2px solid #e5e7eb",
+    borderRadius: "20px",
+    backgroundColor: "white",
+    cursor: "pointer",
+    fontSize: "0.9rem",
+    fontWeight: "600",
+    transition: "all 0.3s",
+  },
+  leaderboardPanel: {
+    backgroundColor: "white",
+    borderRadius: "14px",
+    padding: "20px",
+    marginBottom: "20px",
+    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
+    border: "2px solid #f59e0b",
+  },
+  panelTitle: {
+    fontSize: "1.3rem",
+    fontWeight: "800",
+    color: "#f59e0b",
+    marginBottom: "15px",
+  },
+  tabTitle: {
+    fontSize: "1rem",
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: "12px",
+  },
+  leaderboardItem: {
+    display: "flex",
+    alignItems: "center",
+    padding: "12px",
+    backgroundColor: "#f8fafc",
+    borderRadius: "8px",
+    marginBottom: "8px",
+    gap: "15px",
+  },
+  rank: {
+    fontSize: "1.2rem",
+    fontWeight: "700",
+    color: "#f59e0b",
+    minWidth: "30px",
+  },
+  badge: {
+    marginLeft: "auto",
+    fontWeight: "700",
+    color: "#ec4899",
+  },
+  noData: {
+    textAlign: "center",
+    color: "#999",
+    padding: "20px",
+  },
+  achievementPanel: {
+    backgroundColor: "white",
+    borderRadius: "14px",
+    padding: "20px",
+    marginBottom: "20px",
+    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
+    border: "2px solid #8b5cf6",
+  },
+  badgeGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+    gap: "12px",
+    marginBottom: "15px",
+  },
+  badgeCard: {
+    padding: "15px",
+    borderRadius: "10px",
+    textAlign: "center",
+    border: "2px solid #e5e7eb",
+    transition: "all 0.3s",
+  },
+  badgeCardUnlocked: {
+    backgroundColor: "#f0f9ff",
+    borderColor: "#8b5cf6",
+    boxShadow: "0 4px 12px rgba(139, 92, 246, 0.2)",
+  },
+  badgeCardLocked: {
+    backgroundColor: "#f3f4f6",
+    opacity: 0.5,
+  },
+  badgeIcon: {
+    fontSize: "2.5rem",
+    marginBottom: "8px",
+  },
+  badgeName: {
+    fontSize: "0.9rem",
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: "4px",
+  },
+  badgeDesc: {
+    fontSize: "0.75rem",
+    color: "#666",
   },
 };
