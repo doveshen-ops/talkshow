@@ -114,6 +114,42 @@ export default function SubmissionDashboard() {
         { text: "搞怪逗笑", type: "meme" },
       ],
     },
+    {
+      question: "在聚会上，你通常是？",
+      answers: [
+        { text: "安静观察的人", type: "thinker" },
+        { text: "搞笑活跃的人", type: "meme" },
+        { text: "表情丰富的人", type: "actor" },
+        { text: "嘴毒逗乐的人", type: "roaster" },
+      ],
+    },
+    {
+      question: "别人犯了错误，你会？",
+      answers: [
+        { text: "模仿他的样子", type: "actor" },
+        { text: "尖刻地指出", type: "roaster" },
+        { text: "深思他为什么", type: "thinker" },
+        { text: "制造成表情包", type: "meme" },
+      ],
+    },
+    {
+      question: "你认为最有趣的事是？",
+      answers: [
+        { text: "精妙的反转和逻辑", type: "thinker" },
+        { text: "夸张搞笑的表演", type: "actor" },
+        { text: "一针见血的吐槽", type: "roaster" },
+        { text: "新奇的网络热梗", type: "meme" },
+      ],
+    },
+    {
+      question: "当气氛冷场时，你会？",
+      answers: [
+        { text: "用肢体语言活跃", type: "actor" },
+        { text: "讲个冷笑话", type: "roaster" },
+        { text: "分享一个有意义的话题", type: "thinker" },
+        { text: "发送表情包或梗图", type: "meme" },
+      ],
+    },
   ];
 
   // 性格测试结果
@@ -121,26 +157,26 @@ export default function SubmissionDashboard() {
     roaster: {
       emoji: "🔥",
       name: "段子手型",
-      desc: "你是天生的吐槽大王！言语犀利，永远有笑点，能把再无聊的事讲得超有趣。",
-      strength: ["言语犀利", "观察敏锐", "临场反应快"],
+      description: "你是天生的吐槽大王！言语犀利，永远有笑点，能把再无聊的事讲得超有趣。",
+      strengths: ["言语犀利", "观察敏锐", "临场反应快"],
     },
     actor: {
       emoji: "🎭",
-      name: "表情包型",
-      desc: "你是肢体语言大师！表情丰富，能用夸张动作把冷笑话演成爆笑段子。",
-      strength: ["表现力强", "节奏感好", "现场感十足"],
+      name: "表演家型",
+      description: "你是肢体语言大师！表情丰富，能用夸张动作把冷笑话演成爆笑段子。",
+      strengths: ["表现力强", "节奏感好", "现场感十足"],
     },
     thinker: {
       emoji: "💭",
-      name: "段子家型",
-      desc: "你是思想家型吐槽手！逻辑清晰，段子精妙，每一句都能让人细品。",
-      strength: ["逻辑严密", "内涵丰富", "观点独特"],
+      name: "思想家型",
+      description: "你是思想家型吐槽手！逻辑清晰，段子精妙，每一句都能让人细品。",
+      strengths: ["逻辑严密", "内涵丰富", "观点独特"],
     },
     meme: {
       emoji: "📱",
-      name: "表情包型",
-      desc: "你是网络段子精！掌握最新梗，能快速调动观众情绪，是带动氛围的高手。",
-      strength: ["紧跟潮流", "反应迅速", "交互力强"],
+      name: "段子精型",
+      description: "你是网络段子精！掌握最新梗，能快速调动观众情绪，是带动氛围的高手。",
+      strengths: ["紧跟潮流", "反应迅速", "交互力强"],
     },
   };
 
