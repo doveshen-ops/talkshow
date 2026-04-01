@@ -35,6 +35,9 @@ export default function SubmissionDashboard() {
   const [barrages, setBarrages] = useState([]); // 弹幕列表
   const [barrageUsername, setBarrageUsername] = useState("");
   const [barrageContent, setBarrageContent] = useState("");
+  const [entryBarrageUsername, setEntryBarrageUsername] = useState(""); // 投稿弹幕昵称
+  const [entryBarrageContent, setEntryBarrageContent] = useState(""); // 投稿弹幕内容
+  const [entryBarrages, setEntryBarrages] = useState({}); // { entryId: [barrages] }
 
   // 弹幕颜色列表
   const BARRAGE_COLORS = ["#ff6b6b", "#4ecdc4", "#45b7d1", "#f9ca24", "#6c5ce7", "#a29bfe", "#fd79a8", "#fdcb6e", "#e17055", "#74b9ff"];
@@ -54,6 +57,11 @@ export default function SubmissionDashboard() {
         const barragData = localStorage.getItem("video-barrages");
         if (barragData) {
           setBarrages(JSON.parse(barragData));
+        }
+        // 加载投稿弹幕
+        const entryBarragesData = localStorage.getItem("entry-barrages");
+        if (entryBarragesData) {
+          setEntryBarrages(JSON.parse(entryBarragesData));
         }
       } catch (e) {
         console.log("No existing data");
@@ -116,6 +124,40 @@ export default function SubmissionDashboard() {
     setBarrageUsername("");
     setBarrageContent("");
     alert("🎉 弹幕已发送！");
+  };
+
+  // 发送投稿弹幕
+  const sendEntryBarrage = (entryId) => {
+    if (!entryBarrageUsername.trim() || !entryBarrageContent.trim()) {
+      alert("请填写昵称和评论内容");
+      return;
+    }
+
+    const newBarrage = {
+      id: Date.now(),
+      username: entryBarrageUsername,
+      content: entryBarrageContent,
+      color: getRandomColor(),
+      timestamp: new Date().toISOString(),
+    };
+
+    const currentBarrages = entryBarrages[entryId] || [];
+    const updatedEntryBarrages = {
+      ...entryBarrages,
+      [entryId]: [newBarrage, ...currentBarrages].slice(0, 50), // 每个投稿最多50条
+    };
+
+    setEntryBarrages(updatedEntryBarrages);
+    
+    try {
+      localStorage.setItem("entry-barrages", JSON.stringify(updatedEntryBarrages));
+    } catch (e) {
+      console.error("Failed to save entry barrage:", e);
+    }
+
+    setEntryBarrageUsername("");
+    setEntryBarrageContent("");
+    alert("✅ 评论已发送！");
   };
 
   const addEntry = () => {
@@ -543,6 +585,54 @@ export default function SubmissionDashboard() {
                           {s.icon} {s.label}
                         </button>
                       ))}
+                    </div>
+
+                    {/* 投稿弹幕区域 */}
+                    <div style={styles.entryBarrageSection}>
+                      <h4 style={styles.entryBarrageTitle}>💬 评论 ({(entryBarrages[entry.id] || []).length})</h4>
+                      
+                      {/* 弹幕显示 */}
+                      <div style={styles.entryBarrageList}>
+                        {(entryBarrages[entry.id] || []).length === 0 ? (
+                          <p style={styles.noEntryBarrage}>还没有评论，来评论第一个吧！</p>
+                        ) : (
+                          (entryBarrages[entry.id] || []).slice(0, 8).map((b) => (
+                            <div key={b.id} style={styles.entryBarrageItem}>
+                              <span style={{ color: b.color, fontWeight: "700" }}>
+                                {b.username}:
+                              </span>{" "}
+                              <span style={{ color: b.color }}>{b.content}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* 发送评论 */}
+                      <div style={styles.entryBarrageSendBox}>
+                        <input
+                          type="text"
+                          placeholder="昵称"
+                          value={entryBarrageUsername}
+                          onChange={(e) => setEntryBarrageUsername(e.target.value)}
+                          style={styles.barrageSendInput}
+                          maxLength="20"
+                        />
+                        <input
+                          type="text"
+                          placeholder="发表评论..."
+                          value={entryBarrageContent}
+                          onChange={(e) => setEntryBarrageContent(e.target.value)}
+                          onKeyPress={(e) => e.key === "Enter" && sendEntryBarrage(entry.id)}
+                          style={{ ...styles.barrageSendInput, flex: 1 }}
+                          maxLength="60"
+                        />
+                        <button
+                          onClick={() => sendEntryBarrage(entry.id)}
+                          style={{ ...styles.button, ...styles.barrageButton, padding: "8px 16px" }}
+                        >
+                          发送
+                        </button>
+                      </div>
                     </div>
 
                     <div style={styles.entryActions}>
@@ -1050,5 +1140,54 @@ const styles = {
     color: "white",
     padding: "10px 20px",
     minWidth: "80px",
+  },
+  entryBarrageSection: {
+    marginTop: "15px",
+    paddingTop: "15px",
+    borderTop: "2px solid #f0f0f0",
+    backgroundColor: "#f8fafc",
+    borderRadius: "8px",
+    padding: "15px",
+  },
+  entryBarrageTitle: {
+    fontSize: "0.95rem",
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: "12px",
+  },
+  entryBarrageList: {
+    backgroundColor: "white",
+    borderRadius: "6px",
+    padding: "12px",
+    marginBottom: "12px",
+    border: "1px solid #e5e7eb",
+    maxHeight: "150px",
+    overflowY: "auto",
+  },
+  noEntryBarrage: {
+    color: "#999",
+    fontSize: "0.9rem",
+    textAlign: "center",
+    padding: "20px 10px",
+  },
+  entryBarrageItem: {
+    padding: "6px 0",
+    fontSize: "0.85rem",
+    fontWeight: "500",
+    lineHeight: "1.5",
+  },
+  entryBarrageSendBox: {
+    display: "flex",
+    gap: "8px",
+    alignItems: "center",
+  },
+  barrageSendInput: {
+    padding: "8px 12px",
+    border: "1px solid #e5e7eb",
+    borderRadius: "6px",
+    fontSize: "0.85rem",
+    fontFamily: "inherit",
+    transition: "all 0.3s",
+    boxSizing: "border-box",
   },
 };
