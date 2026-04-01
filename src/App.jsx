@@ -44,6 +44,11 @@ export default function SubmissionDashboard() {
   const [userBadges, setUserBadges] = useState([]); // 用户勋章
   const [showLeaderboard, setShowLeaderboard] = useState(false); // 是否显示排行榜
   const [showAchievements, setShowAchievements] = useState(false); // 是否显示成就
+  const [theme, setTheme] = useState("light"); // 当前主题
+  const [showThemeMenu, setShowThemeMenu] = useState(false); // 主题菜单
+  const [showPersonalityTest, setShowPersonalityTest] = useState(false); // 性格测试
+  const [personalityTestAnswers, setPersonalityTestAnswers] = useState({}); // 测试答案
+  const [personalityResult, setPersonalityResult] = useState(null); // 测试结果
 
   // 表情反应类型
   const REACTIONS = [
@@ -63,6 +68,81 @@ export default function SubmissionDashboard() {
     { id: "reacter", icon: "👍", name: "点赞小能手", desc: "点赞30次" },
     { id: "social_butterfly", icon: "🦋", name: "社交达人", desc: "多种互动" },
   ];
+
+  // 主题配置
+  const THEMES = {
+    light: { name: "☀️ 亮色", bgColor: "linear-gradient(135deg, #667eea 0%, #764ba2 20%, #f093fb 100%)" },
+    dark: { name: "🌙 暗黑", bgColor: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)" },
+    rainbow: { name: "🌈 彩虹", bgColor: "linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)" },
+  };
+
+  // 性格测试问卷
+  const PERSONALITY_TEST = [
+    {
+      question: "你朋友的笑话很冷，你会？",
+      answers: [
+        { text: "😂 哈哈大笑假笑", type: "actor" },
+        { text: "😐 面无表情听着", type: "roaster" },
+        { text: "💭 停顿后慢慢笑", type: "thinker" },
+        { text: "📱 转发给群里", type: "meme" },
+      ],
+    },
+    {
+      question: "吐槽你最擅长什么？",
+      answers: [
+        { text: "表情包和语气", type: "meme" },
+        { text: "段子和包袱", type: "thinker" },
+        { text: "冷笑话和反转", type: "roaster" },
+        { text: "夸张表演", type: "actor" },
+      ],
+    },
+    {
+      question: "看到尴尬的事你会？",
+      answers: [
+        { text: "大声吐槽", type: "roaster" },
+        { text: "沉默观察", type: "thinker" },
+        { text: "装作没看见", type: "meme" },
+        { text: "表演出来", type: "actor" },
+      ],
+    },
+    {
+      question: "你的吐槽风格是？",
+      answers: [
+        { text: "温和幽默", type: "actor" },
+        { text: "犀利直接", type: "roaster" },
+        { text: "内涵深沉", type: "thinker" },
+        { text: "搞怪逗笑", type: "meme" },
+      ],
+    },
+  ];
+
+  // 性格测试结果
+  const PERSONALITY_RESULTS = {
+    roaster: {
+      emoji: "🔥",
+      name: "段子手型",
+      desc: "你是天生的吐槽大王！言语犀利，永远有笑点，能把再无聊的事讲得超有趣。",
+      strength: ["言语犀利", "观察敏锐", "临场反应快"],
+    },
+    actor: {
+      emoji: "🎭",
+      name: "表情包型",
+      desc: "你是肢体语言大师！表情丰富，能用夸张动作把冷笑话演成爆笑段子。",
+      strength: ["表现力强", "节奏感好", "现场感十足"],
+    },
+    thinker: {
+      emoji: "💭",
+      name: "段子家型",
+      desc: "你是思想家型吐槽手！逻辑清晰，段子精妙，每一句都能让人细品。",
+      strength: ["逻辑严密", "内涵丰富", "观点独特"],
+    },
+    meme: {
+      emoji: "📱",
+      name: "表情包型",
+      desc: "你是网络段子精！掌握最新梗，能快速调动观众情绪，是带动氛围的高手。",
+      strength: ["紧跟潮流", "反应迅速", "交互力强"],
+    },
+  };
 
   // Load from storage
   useEffect(() => {
@@ -246,6 +326,49 @@ export default function SubmissionDashboard() {
     setUserBadges(newBadges);
     return newBadges;
   };
+
+  // 切换主题
+  const switchTheme = (themeName) => {
+    setTheme(themeName);
+    setShowThemeMenu(false);
+    try {
+      localStorage.setItem("user-theme", themeName);
+    } catch (e) {
+      console.error("Failed to save theme:", e);
+    }
+  };
+
+  // 提交性格测试
+  const submitPersonalityTest = () => {
+    const answers = Object.values(personalityTestAnswers);
+    if (answers.length < PERSONALITY_TEST.length) {
+      alert("请答完所有问题！");
+      return;
+    }
+
+    // 计算最多的性格类型
+    const typeCount = {};
+    answers.forEach((type) => {
+      typeCount[type] = (typeCount[type] || 0) + 1;
+    });
+
+    const resultType = Object.keys(typeCount).reduce((a, b) =>
+      typeCount[a] > typeCount[b] ? a : b
+    );
+
+    setPersonalityResult(resultType);
+    try {
+      localStorage.setItem("user-personality", resultType);
+    } catch (e) {
+      console.error("Failed to save personality:", e);
+    }
+  };
+
+  // 加载主题
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("user-theme") || "light";
+    setTheme(savedTheme);
+  }, []);
   const sendEntryBarrage = (entryId) => {
     if (!entryBarrageUsername.trim() || !entryBarrageContent.trim()) {
       alert("请填写昵称和评论内容");
@@ -334,7 +457,7 @@ export default function SubmissionDashboard() {
   };
 
   return (
-    <div style={styles.container}>
+    <div style={{ ...styles.container, background: THEMES[theme].bgColor }}>
       <div style={styles.header}>
         <h1 style={styles.title}>🎤 Talkshow 话题秀</h1>
         <p style={styles.subtitle}>投稿管理平台</p>
@@ -363,6 +486,18 @@ export default function SubmissionDashboard() {
             style={{ ...styles.button, ...styles.achievementButton }}
           >
             🏅 成就 ({userBadges.length})
+          </button>
+          <button
+            onClick={() => setShowPersonalityTest(true)}
+            style={{ ...styles.button, ...styles.personalityButton }}
+          >
+            🎭 测试
+          </button>
+          <button
+            onClick={() => setShowThemeMenu(!showThemeMenu)}
+            style={{ ...styles.button, ...styles.themeButton }}
+          >
+            🎨 主题
           </button>
           {!isAdmin ? (
             <button
@@ -482,6 +617,136 @@ export default function SubmissionDashboard() {
             style={{ ...styles.button, ...styles.cancelButton, marginTop: "15px" }}
           >
             关闭
+          </button>
+        </div>
+      )}
+
+      {/* 主题菜单 */}
+      {showThemeMenu && (
+        <div style={styles.themePanel}>
+          <h3 style={styles.panelTitle}>🎨 选择主题</h3>
+          <div style={styles.themeGrid}>
+            <button
+              onClick={() => {
+                switchTheme("light");
+                setShowThemeMenu(false);
+              }}
+              style={{ ...styles.button, ...styles.themeOptionButton, ...(theme === "light" ? styles.themeOptionActive : {}) }}
+            >
+              ☀️ 亮色
+            </button>
+            <button
+              onClick={() => {
+                switchTheme("dark");
+                setShowThemeMenu(false);
+              }}
+              style={{ ...styles.button, ...styles.themeOptionButton, ...(theme === "dark" ? styles.themeOptionActive : {}) }}
+            >
+              🌙 暗黑
+            </button>
+            <button
+              onClick={() => {
+                switchTheme("rainbow");
+                setShowThemeMenu(false);
+              }}
+              style={{ ...styles.button, ...styles.themeOptionButton, ...(theme === "rainbow" ? styles.themeOptionActive : {}) }}
+            >
+              🌈 彩虹
+            </button>
+          </div>
+          <button
+            onClick={() => setShowThemeMenu(false)}
+            style={{ ...styles.button, ...styles.cancelButton, marginTop: "15px" }}
+          >
+            关闭
+          </button>
+        </div>
+      )}
+
+      {/* 性格测试模态框 */}
+      {showPersonalityTest && (
+        <div style={styles.personalityTestPanel}>
+          <h3 style={styles.panelTitle}>🎭 吐槽者性格测试</h3>
+          <p style={{ textAlign: "center", color: "#666", marginBottom: "20px" }}>
+            {personalityResult ? "你的吐槽类型是：" : "了解你的吐槽风格"}
+          </p>
+          
+          {!personalityResult ? (
+            <div style={styles.questionContainer}>
+              {PERSONALITY_TEST.map((q, idx) => (
+                <div key={idx} style={styles.questionBlock}>
+                  <h4 style={{ marginBottom: "12px", color: "#333" }}>
+                    {idx + 1}. {q.question}
+                  </h4>
+                  <div style={styles.answerGrid}>
+                    {q.answers.map((answer, ansIdx) => (
+                      <button
+                        key={ansIdx}
+                        onClick={() => {
+                          const newAnswers = { ...personalityTestAnswers };
+                          newAnswers[idx] = answer.type;
+                          setPersonalityTestAnswers(newAnswers);
+                        }}
+                        style={{
+                          ...styles.button,
+                          ...styles.answerButton,
+                          ...(personalityTestAnswers[idx] === answer.type
+                            ? { backgroundColor: "#FF6B6B", color: "white" }
+                            : {}),
+                        }}
+                      >
+                        {answer.text}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <button
+                onClick={() => {
+                  if (Object.keys(personalityTestAnswers).length === PERSONALITY_TEST.length) {
+                    submitPersonalityTest();
+                  } else {
+                    alert("请回答所有问题！");
+                  }
+                }}
+                style={{ ...styles.button, ...styles.submitButton, width: "100%", marginTop: "20px" }}
+              >
+                提交答案
+              </button>
+            </div>
+          ) : (
+            <div style={styles.resultContainer}>
+              <div style={styles.resultCard}>
+                <div style={styles.resultEmoji}>{PERSONALITY_RESULTS[personalityResult].emoji}</div>
+                <h2 style={{ color: "#333", marginBottom: "10px" }}>
+                  {PERSONALITY_RESULTS[personalityResult].name}
+                </h2>
+                <p style={{ color: "#666", marginBottom: "15px", fontSize: "14px" }}>
+                  {PERSONALITY_RESULTS[personalityResult].description}
+                </p>
+                <div style={styles.strengthsList}>
+                  <strong>特点：</strong>
+                  <ul style={{ marginLeft: "20px", marginTop: "8px" }}>
+                    {PERSONALITY_RESULTS[personalityResult].strengths.map((s, i) => (
+                      <li key={i} style={{ fontSize: "14px", marginBottom: "5px" }}>
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              setShowPersonalityTest(false);
+              setPersonalityResult(null);
+              setPersonalityTestAnswers({});
+            }}
+            style={{ ...styles.button, ...styles.cancelButton, marginTop: "15px", width: "100%" }}
+          >
+            {personalityResult ? "完成" : "取消"}
           </button>
         </div>
       )}
@@ -1549,5 +1814,95 @@ const styles = {
   badgeDesc: {
     fontSize: "0.75rem",
     color: "#666",
+  },
+  themePanel: {
+    backgroundColor: "white",
+    borderRadius: "14px",
+    padding: "20px",
+    marginBottom: "20px",
+    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
+    border: "2px solid #10b981",
+  },
+  themeGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: "12px",
+    marginBottom: "15px",
+  },
+  themeOptionButton: {
+    padding: "12px 16px",
+    fontSize: "0.95rem",
+    borderRadius: "8px",
+    border: "2px solid #e5e7eb",
+    backgroundColor: "#f3f4f6",
+    cursor: "pointer",
+    transition: "all 0.3s",
+  },
+  themeOptionActive: {
+    backgroundColor: "#10b981",
+    color: "white",
+    borderColor: "#10b981",
+    boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
+  },
+  personalityTestPanel: {
+    backgroundColor: "white",
+    borderRadius: "14px",
+    padding: "20px",
+    marginBottom: "20px",
+    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
+    border: "2px solid #f59e0b",
+  },
+  questionContainer: {
+    marginBottom: "15px",
+  },
+  questionBlock: {
+    marginBottom: "20px",
+    padding: "15px",
+    backgroundColor: "#fffbf0",
+    borderRadius: "10px",
+    border: "1px solid #fed7aa",
+  },
+  answerGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(1, 1fr)",
+    gap: "8px",
+  },
+  answerButton: {
+    padding: "10px 12px",
+    fontSize: "0.9rem",
+    backgroundColor: "#f3f4f6",
+    border: "2px solid #e5e7eb",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "all 0.2s",
+  },
+  submitButton: {
+    padding: "12px 20px",
+    fontSize: "0.95rem",
+    backgroundColor: "#f59e0b",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "all 0.3s",
+  },
+  resultContainer: {
+    marginBottom: "15px",
+  },
+  resultCard: {
+    padding: "20px",
+    backgroundColor: "#fef3c7",
+    borderRadius: "10px",
+    border: "2px solid #fcd34d",
+    textAlign: "center",
+  },
+  resultEmoji: {
+    fontSize: "4rem",
+    marginBottom: "15px",
+  },
+  strengthsList: {
+    textAlign: "left",
+    color: "#333",
+    fontSize: "0.9rem",
   },
 };
