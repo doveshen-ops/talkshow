@@ -32,6 +32,15 @@ export default function SubmissionDashboard() {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [selectedVideoType, setSelectedVideoType] = useState("latest"); // "latest" 或 "playlist"
+  const [barrages, setBarrages] = useState([]); // 弹幕列表
+  const [barrageUsername, setBarrageUsername] = useState("");
+  const [barrageContent, setBarrageContent] = useState("");
+
+  // 弹幕颜色列表
+  const BARRAGE_COLORS = ["#ff6b6b", "#4ecdc4", "#45b7d1", "#f9ca24", "#6c5ce7", "#a29bfe", "#fd79a8", "#fdcb6e", "#e17055", "#74b9ff"];
+
+  // 生成随机颜色
+  const getRandomColor = () => BARRAGE_COLORS[Math.floor(Math.random() * BARRAGE_COLORS.length)];
 
   // Load from storage
   useEffect(() => {
@@ -40,6 +49,11 @@ export default function SubmissionDashboard() {
         const result = localStorage.getItem("roast-submissions");
         if (result) {
           setEntries(JSON.parse(result));
+        }
+        // 加载弹幕
+        const barragData = localStorage.getItem("video-barrages");
+        if (barragData) {
+          setBarrages(JSON.parse(barragData));
         }
       } catch (e) {
         console.log("No existing data");
@@ -73,6 +87,35 @@ export default function SubmissionDashboard() {
   const handleAdminLogout = () => {
     setIsAdmin(false);
     alert("已登出管理员");
+  };
+
+  // 发送弹幕
+  const sendBarrage = () => {
+    if (!barrageUsername.trim() || !barrageContent.trim()) {
+      alert("请填写昵称和弹幕内容");
+      return;
+    }
+
+    const newBarrage = {
+      id: Date.now(),
+      username: barrageUsername,
+      content: barrageContent,
+      color: getRandomColor(),
+      timestamp: new Date().toISOString(),
+    };
+
+    const updatedBarrages = [newBarrage, ...barrages].slice(0, 100); // 只保存最新100条
+    setBarrages(updatedBarrages);
+    
+    try {
+      localStorage.setItem("video-barrages", JSON.stringify(updatedBarrages));
+    } catch (e) {
+      console.error("Failed to save barrage:", e);
+    }
+
+    setBarrageUsername("");
+    setBarrageContent("");
+    alert("🎉 弹幕已发送！");
   };
 
   const addEntry = () => {
@@ -274,6 +317,62 @@ export default function SubmissionDashboard() {
                   style={{ borderRadius: "12px" }}
                 ></iframe>
               )}
+            </div>
+
+            {/* 弹幕区域 */}
+            <div style={styles.barrageSection}>
+              <h3 style={styles.barrageTitle}>💬 实时弹幕 ({barrages.length})</h3>
+              
+              {/* 弹幕显示区域 */}
+              <div style={styles.barrageContainer}>
+                {barrages.length === 0 ? (
+                  <p style={styles.noBarrage}>还没有弹幕，来发第一条吧！</p>
+                ) : (
+                  <div style={styles.barrageList}>
+                    {barrages.slice(0, 15).map((b) => (
+                      <div
+                        key={b.id}
+                        style={{
+                          ...styles.barrageItem,
+                          animation: `barrageScroll 6s linear forwards`,
+                        }}
+                      >
+                        <span style={{ color: b.color, fontWeight: "700" }}>
+                          {b.username}:
+                        </span>{" "}
+                        <span style={{ color: b.color }}>{b.content}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 发送弹幕 */}
+              <div style={styles.barrageSendBox}>
+                <input
+                  type="text"
+                  placeholder="昵称"
+                  value={barrageUsername}
+                  onChange={(e) => setBarrageUsername(e.target.value)}
+                  style={styles.barrageInput}
+                  maxLength="20"
+                />
+                <input
+                  type="text"
+                  placeholder="发送弹幕..."
+                  value={barrageContent}
+                  onChange={(e) => setBarrageContent(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && sendBarrage()}
+                  style={{ ...styles.barrageInput, flex: 1 }}
+                  maxLength="50"
+                />
+                <button
+                  onClick={sendBarrage}
+                  style={{ ...styles.button, ...styles.barrageButton }}
+                >
+                  发送
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -893,5 +992,63 @@ const styles = {
     aspectRatio: "16 / 9",
     borderRadius: "12px",
     overflow: "hidden",
+  },
+  barrageSection: {
+    marginTop: "25px",
+    backgroundColor: "#f8fafc",
+    borderRadius: "12px",
+    padding: "20px",
+    border: "2px solid #e2e8f0",
+  },
+  barrageTitle: {
+    fontSize: "1.1rem",
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: "15px",
+  },
+  barrageContainer: {
+    backgroundColor: "white",
+    borderRadius: "8px",
+    height: "180px",
+    overflow: "hidden",
+    border: "2px solid #e5e7eb",
+    marginBottom: "15px",
+    position: "relative",
+    background: "linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(240, 147, 251, 0.03) 100%)",
+  },
+  noBarrage: {
+    textAlign: "center",
+    color: "#999",
+    padding: "70px 20px",
+    fontSize: "1rem",
+  },
+  barrageList: {
+    padding: "15px 0",
+  },
+  barrageItem: {
+    padding: "8px 20px",
+    fontSize: "0.95rem",
+    fontWeight: "500",
+    whiteSpace: "nowrap",
+    marginBottom: "5px",
+  },
+  barrageSendBox: {
+    display: "flex",
+    gap: "10px",
+    alignItems: "center",
+  },
+  barrageInput: {
+    padding: "10px 15px",
+    border: "2px solid #e5e7eb",
+    borderRadius: "8px",
+    fontSize: "0.95rem",
+    fontFamily: "inherit",
+    transition: "all 0.3s",
+  },
+  barrageButton: {
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    color: "white",
+    padding: "10px 20px",
+    minWidth: "80px",
   },
 };
