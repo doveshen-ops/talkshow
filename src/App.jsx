@@ -74,6 +74,9 @@ export default function SubmissionDashboard() {
     light: { name: "☀️ 亮色", bgColor: "linear-gradient(135deg, #667eea 0%, #764ba2 20%, #f093fb 100%)" },
     dark: { name: "🌙 暗黑", bgColor: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)" },
     rainbow: { name: "🌈 彩虹", bgColor: "linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)" },
+    cute: { name: "💕 可爱", bgColor: "linear-gradient(135deg, #ffc0cb 0%, #ffd4e5 25%, #ffb3d9 50%, #ff99cc 75%, #ff85c1 100%)" },
+    cyberpunk: { name: "🤖 赛博", bgColor: "linear-gradient(135deg, #0a0e27 0%, #1a1a3e 30%, #00ff88 50%, #00d4ff 100%)" },
+    funny: { name: "😂 搞笑", bgColor: "linear-gradient(90deg, #ff6b6b, #ff8c42, #ffd93d, #a8e6cf, #6bcf7f, #4d96ff, #c78bff, #ff6b9d)" },
   };
 
   // 性格测试问卷
@@ -688,6 +691,33 @@ export default function SubmissionDashboard() {
               style={{ ...styles.button, ...styles.themeOptionButton, ...(theme === "rainbow" ? styles.themeOptionActive : {}) }}
             >
               🌈 彩虹
+            </button>
+            <button
+              onClick={() => {
+                switchTheme("cute");
+                setShowThemeMenu(false);
+              }}
+              style={{ ...styles.button, ...styles.themeOptionButton, ...(theme === "cute" ? styles.themeOptionActive : {}) }}
+            >
+              💕 可爱
+            </button>
+            <button
+              onClick={() => {
+                switchTheme("cyberpunk");
+                setShowThemeMenu(false);
+              }}
+              style={{ ...styles.button, ...styles.themeOptionButton, ...(theme === "cyberpunk" ? styles.themeOptionActive : {}) }}
+            >
+              🤖 赛博
+            </button>
+            <button
+              onClick={() => {
+                switchTheme("funny");
+                setShowThemeMenu(false);
+              }}
+              style={{ ...styles.button, ...styles.themeOptionButton, ...(theme === "funny" ? styles.themeOptionActive : {}) }}
+            >
+              😂 搞笑
             </button>
           </div>
           <button
@@ -1861,7 +1891,7 @@ const styles = {
   },
   themeGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
+    gridTemplateColumns: "repeat(2, 1fr)",
     gap: "12px",
     marginBottom: "15px",
   },
