@@ -15,6 +15,8 @@ const STAGES = [
 
 const EMPTY_FORM = { name: "", content: "", track: "junior", videoUrl: "" };
 const ADMIN_PASSWORD = "admin123"; // 改成你自己的密码
+const YOUTUBE_LATEST_VIDEO = "iocJc342Q8s"; // 最新视频
+const YOUTUBE_PLAYLIST_ID = "PL8VQpb2MVdhHKgyvQfWnsXDqlJ7oHNpIO"; // 吐槽大会播放列表
 
 export default function SubmissionDashboard() {
   const [entries, setEntries] = useState([]);
@@ -28,6 +30,8 @@ export default function SubmissionDashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [selectedVideoType, setSelectedVideoType] = useState("latest"); // "latest" 或 "playlist"
 
   // Load from storage
   useEffect(() => {
@@ -183,6 +187,94 @@ export default function SubmissionDashboard() {
             >
               取消
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* YouTube 视频入口 */}
+      <div style={styles.youtubeSection}>
+        <div style={styles.youtubeCard}>
+          <div style={styles.youtubeBadge}>🎬 官方视频</div>
+          <h2 style={styles.youtubeTitle}>吐槽大会</h2>
+          <p style={styles.youtubeDescription}>观看精彩吐槽视频，获得灵感</p>
+          <div style={styles.youtubeButtonGroup}>
+            <button
+              onClick={() => {
+                setSelectedVideoType("latest");
+                setShowVideoModal(true);
+              }}
+              style={{ ...styles.button, ...styles.youtubeButton }}
+            >
+              ▶️ 最新视频
+            </button>
+            <button
+              onClick={() => {
+                setSelectedVideoType("playlist");
+                setShowVideoModal(true);
+              }}
+              style={{ ...styles.button, ...styles.youtubePlaylistButton }}
+            >
+              📺 全套视频
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* YouTube 视频播放模态框 */}
+      {showVideoModal && (
+        <div style={styles.modalOverlay} onClick={() => setShowVideoModal(false)}>
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowVideoModal(false)}
+              style={styles.closeButton}
+            >
+              ✕
+            </button>
+            <div style={styles.videoTypeSelector}>
+              <button
+                onClick={() => setSelectedVideoType("latest")}
+                style={{
+                  ...styles.videoTypeButton,
+                  ...(selectedVideoType === "latest" ? styles.videoTypeButtonActive : {}),
+                }}
+              >
+                ▶️ 最新视频
+              </button>
+              <button
+                onClick={() => setSelectedVideoType("playlist")}
+                style={{
+                  ...styles.videoTypeButton,
+                  ...(selectedVideoType === "playlist" ? styles.videoTypeButtonActive : {}),
+                }}
+              >
+                📺 全套视频
+              </button>
+            </div>
+            <div style={styles.youtubePlayer}>
+              {selectedVideoType === "latest" ? (
+                <iframe
+                  width="100%"
+                  height="500"
+                  src={`https://www.youtube.com/embed/${YOUTUBE_LATEST_VIDEO}`}
+                  title="吐槽大会 - 最新视频"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{ borderRadius: "12px" }}
+                ></iframe>
+              ) : (
+                <iframe
+                  width="100%"
+                  height="500"
+                  src={`https://www.youtube.com/embed/videoseries?list=${YOUTUBE_PLAYLIST_ID}`}
+                  title="吐槽大会 - 全套视频"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{ borderRadius: "12px" }}
+                ></iframe>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -685,5 +777,121 @@ const styles = {
     fontSize: "1.3rem",
     color: "#ffffff",
     fontWeight: "600",
+  },
+  youtubeSection: {
+    marginBottom: "25px",
+    marginTop: "25px",
+  },
+  youtubeCard: {
+    background: "linear-gradient(135deg, rgba(255, 0, 0, 0.05) 0%, rgba(255, 0, 0, 0.02) 100%)",
+    border: "3px solid #ef4444",
+    borderRadius: "16px",
+    padding: "25px",
+    textAlign: "center",
+    boxShadow: "0 8px 24px rgba(239, 68, 68, 0.15)",
+    backdropFilter: "blur(10px)",
+  },
+  youtubeBadge: {
+    display: "inline-block",
+    backgroundColor: "#ef4444",
+    color: "white",
+    padding: "8px 16px",
+    borderRadius: "20px",
+    fontSize: "0.9rem",
+    fontWeight: "700",
+    marginBottom: "12px",
+  },
+  youtubeTitle: {
+    fontSize: "2rem",
+    fontWeight: "800",
+    color: "#ef4444",
+    marginBottom: "8px",
+  },
+  youtubeDescription: {
+    fontSize: "1.05rem",
+    color: "#666",
+    marginBottom: "20px",
+    fontWeight: "500",
+  },
+  youtubeButtonGroup: {
+    display: "flex",
+    gap: "15px",
+    justifyContent: "center",
+    flexWrap: "wrap",
+  },
+  youtubeButton: {
+    background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+    color: "white",
+    padding: "14px 28px",
+  },
+  youtubePlaylistButton: {
+    background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
+    color: "white",
+    padding: "14px 28px",
+  },
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+  modalContent: {
+    backgroundColor: "rgba(255, 255, 255, 0.98)",
+    borderRadius: "16px",
+    padding: "30px",
+    maxWidth: "90%",
+    width: "100%",
+    maxHeight: "90vh",
+    overflow: "auto",
+    position: "relative",
+    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+  },
+  closeButton: {
+    position: "absolute",
+    top: "15px",
+    right: "15px",
+    width: "40px",
+    height: "40px",
+    border: "none",
+    borderRadius: "8px",
+    backgroundColor: "#f3f4f6",
+    cursor: "pointer",
+    fontSize: "1.5rem",
+    transition: "all 0.3s",
+    zIndex: 1001,
+  },
+  videoTypeSelector: {
+    display: "flex",
+    gap: "12px",
+    justifyContent: "center",
+    marginBottom: "20px",
+    flexWrap: "wrap",
+  },
+  videoTypeButton: {
+    padding: "10px 20px",
+    border: "2px solid #e5e7eb",
+    borderRadius: "8px",
+    backgroundColor: "white",
+    cursor: "pointer",
+    fontSize: "0.95rem",
+    fontWeight: "600",
+    transition: "all 0.3s",
+  },
+  videoTypeButtonActive: {
+    backgroundColor: "#ef4444",
+    color: "white",
+    borderColor: "#ef4444",
+  },
+  youtubePlayer: {
+    width: "100%",
+    aspectRatio: "16 / 9",
+    borderRadius: "12px",
+    overflow: "hidden",
   },
 };
